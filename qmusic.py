@@ -38,6 +38,7 @@ class Act(Base):
     mid = Column(String(32))
     actid = Column(Integer, primary_key=True)  # 动作id？
     publictime = Column(String(32))
+    companyname = Column(String(32))
     price = Column(Integer)
     soldamt = Column(BigInteger)
     sold_album_cnt = Column(BigInteger)
@@ -74,6 +75,11 @@ class Acct(Base):
 
 
 def crawl_sale_info(albummid):
+    """
+    爬取销售基本信息
+    :param albummid: 专辑id
+    :return:
+    """
     url = "https://c.y.qq.com/v8/fcg-bin/musicmall.fcg?" \
           "g_tk={}&uin={}&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=h5&needNewCode=1&albumid=&albummid={}&cmd=get_base_sale_info&songlist=1&desc=1&singerinfo=1&salecount=1&_={}" \
         .format(g_tk, qq, albummid, int(time.time()))
@@ -81,6 +87,7 @@ def crawl_sale_info(albummid):
     js = json.loads(req.text)
     actid = js['data']['actid']
     publictime = js['data']['publictime']
+    companyname = js['data']['companyname']
     price = js['data']['price']
     soldamt = js['data']['soldamt']
     sold_album_cnt = js['data']['sold_album_cnt']
@@ -160,28 +167,39 @@ def crawl_acct(actid, uUin):
 
 
 def delete(actid):
-    Act.query.filter(actid=actid).delete(synchronize_session=False)
-    Union.query.filter(a_actid=actid).delete(synchronize_session=False)
-    Acct.query.filter(a_actid=actid).delete(synchronize_session=False)
+    session.query(Act).filter(Act.actid==actid).delete(synchronize_session=False)
+    session.query(Union).query.filter(Union.a_actid==actid).delete(synchronize_session=False)
+    session.query(Acct).query.filter(Acct.a_actid==actid).delete(synchronize_session=False)
     session.commit()
 
 
 if __name__ == '__main__':
     # 重建表
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
-
-    mid = '000etWPH2Sk6kG' # mmq
-
-    actid = crawl_sale_info(mid)
-    print(actid)
-
-    # 爬取所有工会
-    crawl_union(actid)
-
+    # Base.metadata.drop_all(engine)
+    # Base.metadata.create_all(engine)
+    mids = [
+        # '000etWPH2Sk6kG',  # mmq
+        # '00459BEP32YDr9',  # lyc
+        # '000SVLvW0snMWF',  # ljy
+        # '0029PCuB2DIBp8',  # lyj
+        '001zLxbr23aBw9',  # 101
+        '000BT7a82jqNKM',  # cln
+        '000lI2WE4F4K2p',  # cln
+        '002S1Aib4OZRf9',  # wzy
+        '000jXsoU3hj9Wg',  # ou
+        '003mm4ak1OiT9Y',  # oner
+        '001T7G8z0o9FlF',  # zyx
+        '0030BKre4drZB5',  # zyl
+    ]
+    # for mid in mids:
+    #     actid = crawl_sale_info(mid)
+    #     print(actid)
+    #
+    #     # 爬取所有工会
+    #     crawl_union(actid)
 
     # 只爬取某个工会
-    # crawl_union(begin=12, end=12, autoPage=False)
+    # crawl_union(actid,begin=12, end=12, autoPage=False)
 
     # 删除
-    # delete(339)
+    delete(279)
